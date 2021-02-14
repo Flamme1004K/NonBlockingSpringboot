@@ -1,7 +1,7 @@
 package com.example.NonBlockingCoroutine.controller
 
 import com.example.NonBlockingCoroutine.model.Product
-import com.example.NonBlockingCoroutine.repository.ProductRepository
+import com.example.NonBlockingCoroutine.service.ProductService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -20,30 +20,27 @@ class ProductControllerCoroutines {
     lateinit var webClient: WebClient
 
     @Autowired
-    lateinit var productRepository: ProductRepository
+    lateinit var productService: ProductService
 
     @GetMapping("/{id}")
-    suspend fun findOne(@PathVariable id: Long): Product? {
-        return productRepository.findById(id).orElseThrow{IllegalAccessException("notFoundProductId")}
-    }
+    suspend fun findOne(@PathVariable id: Long): Product? = productService.findById(id)
+
 
     @GetMapping("/{id}/stock")
     suspend fun findOneInStock(@PathVariable id: Long): Product = coroutineScope {
-        val product: Deferred<Product> = async(start = CoroutineStart.LAZY) {
-            productRepository.findById(id).orElseThrow{IllegalAccessException("notFoundProductId")}
+        val product: Deferred<Product?> = async(start = CoroutineStart.LAZY) {
+            productService.findById(id)
         }
         val quantity: Deferred<Float> = async(start = CoroutineStart.LAZY) {
             webClient.get()
                 .uri("/stock-service/product/$id/quantity")
                 .accept(APPLICATION_JSON)
-                .retrieve().awaitBody<Float>()
+                .retrieve().awaitBody()
         }
-        Product(product.await().name, quantity.await())
+        Product(product.await()!!, quantity.await())
     }
 
     @FlowPreview
     @GetMapping("/")
-    fun findAll(): Flow<Product> {
-        return productRepository.findAll().asFlow()
-    }
+    suspend fun findAll(): Flow<Product> = productService.findAllProduct()
 }

@@ -10,6 +10,8 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
+import java.util.*
 
 @RestController
 class ProductController {
@@ -19,21 +21,21 @@ class ProductController {
     lateinit var productRepository: ProductRepository
 
     @GetMapping("/{id}")
-    fun findOne(@PathVariable id: Long): Mono<Product> {
+    fun findOne(@PathVariable id: Long): Optional<Product> {
         return productRepository.findById(id)
     }
 
     @GetMapping("/{id}/stock")
     fun findOneInStock(@PathVariable id: Long): Mono<Product> {
-        val product = productRepository.findById(id).orElseThrow { IllegalAccessException("notFoundProductId") }
+        val product = productRepository.findById(id).orElseThrow().toMono()
 
         val stockQuantity = webClient.get()
             .uri("/stock-service/product/$id/quantity")
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
-            .bodyToMono<Int>()
+            .bodyToMono<Float>()
         return product.zipWith(stockQuantity) { productInStock, stockQty ->
-            ProductStockView(productInStock, stockQty)
+            Product(productInStock, stockQty)
         }
     }
 
@@ -43,7 +45,7 @@ class ProductController {
     }
 
     @GetMapping("/")
-    fun findAll(): Flux<Product> {
-        return productRepository.getAllProducts()
+    fun findAll(): MutableIterable<Product> {
+        return productRepository.findAll()
     }
 }

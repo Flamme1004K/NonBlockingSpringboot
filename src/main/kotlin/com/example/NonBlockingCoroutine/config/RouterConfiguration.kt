@@ -9,11 +9,11 @@ import org.springframework.web.reactive.function.server.coRouter
 @Configuration
 class RouterConfiguration {
 
-//    @FlowPreview
-//    @Bean
-//    fun productRoutes(productsHandler: ProductsHandler) = coRouter {
-//        GET("/", productsHandler::findAll)
-//        GET("/{id}", productsHandler::findOne)
-//        GET("/{id}/stock", productsHandler::findOneInStock)
-//    }
+    @FlowPreview
+    @Bean
+    fun productRoutes(productsHandler: ProductsHandler) = coRouter {
+        GET("/", )
+        GET("/{id}", )
+        GET("/{id}/stock",)
+    }
 }
